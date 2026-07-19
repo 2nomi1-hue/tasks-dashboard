@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>작업 대시보드</title>
+  <style>
+    :root { color-scheme: light; --ink:#18212f; --muted:#637083; --line:#e5e9f0; --bg:#f6f8fb; --card:#fff; --blue:#2563eb; --amber:#d97706; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { max-width:1120px; margin:auto; padding:44px 22px 64px; }
+    header { display:flex; justify-content:space-between; gap:20px; align-items:end; margin-bottom:28px; }
+    h1 { margin:0; font-size:30px; letter-spacing:-.04em; }
+    header p { margin:6px 0 0; color:var(--muted); }
+    a { color:var(--blue); text-decoration:none; font-weight:650; }
+    #board { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+    section { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; box-shadow:0 4px 14px #18212f08; }
+    section.wide { grid-column:1 / -1; }
+    h2 { font-size:16px; margin:0 0 13px; }
+    ul { padding:0; margin:0; list-style:none; }
+    li { border-top:1px solid var(--line); padding:11px 0; }
+    li:first-child { border-top:0; padding-top:0; }
+    .done { color:var(--muted); text-decoration:line-through; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th,td { padding:10px 8px; text-align:left; border-top:1px solid var(--line); vertical-align:top; }
+    th { color:var(--muted); font-weight:650; }
+    .empty { color:var(--muted); }
+    .notice { color:var(--amber); }
+    @media (max-width:600px) { main { padding:28px 14px; } header { display:block; } header a { display:inline-block; margin-top:14px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div><h1>작업 대시보드</h1><p>할 일 · 결정 사항 · 미해결 질문</p></div>
+      <a href="TASKS.md">원본 TASKS.md 열기</a>
+    </header>
+    <div id="board"><p class="empty">대시보드를 불러오는 중입니다…</p></div>
+  </main>
+  <script>
+    const board = document.querySelector('#board');
+    const escapeHtml = value => value.replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+    const taskHtml = line => {
+      const done = line.startsWith('- [x]');
+      const text = line.replace(/^- \[[ x]\] /, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/~~(.*?)~~/g, '$1');
+      return `<li class="${done ? 'done' : ''}">${done ? '✓' : '○'} ${text}</li>`;
+    };
+    const tableHtml = lines => {
+      const rows = lines.filter(line => line.startsWith('|') && !line.includes('---')).map(line => line.split('|').slice(1,-1).map(cell => escapeHtml(cell.trim())));
+      if (!rows.length) return '<p class="empty">기록이 없습니다.</p>';
+      return `<table><thead><tr>${rows[0].map(cell => `<th>${cell}</th>`).join('')}</tr></thead><tbody>${rows.slice(1).map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    };
+    fetch(`TASKS.md?updated=${Date.now()}`).then(response => response.ok ? response.text() : Promise.reject()).then(markdown => {
+      const sections = markdown.split(/^## /m).slice(1).map(block => {
+        const [title, ...body] = block.split('\n');
+        return { title: title.trim(), lines: body.filter(line => line.trim() && !line.startsWith('---')) };
+      });
+      board.innerHTML = sections.filter(section => !section.title.includes('빠른 사용법')).map(section => {
+        const isTable = section.lines.some(line => line.startsWith('|'));
+        const isWide = isTable ? 'wide' : '';
+        const content = isTable ? tableHtml(section.lines) : `<ul>${section.lines.filter(line => line.startsWith('- [')).map(taskHtml).join('') || '<li class="empty">항목이 없습니다.</li>'}</ul>`;
+        return `<section class="${isWide}"><h2>${escapeHtml(section.title)}</h2>${content}</section>`;
+      }).join('');
+    }).catch(() => { board.innerHTML = '<p class="notice">TASKS.md를 불러오지 못했습니다. 잠시 후 새로고침해 주세요.</p>'; });
+  </script>
+</body>
+</html>
