@@ -2,7 +2,7 @@
   "schema_version": 1,
   "meta": {
     "title": "작업 대시보드",
-    "updated_at": "2026-07-19T10:41:14.010Z",
+    "updated_at": "2026-07-19T10:42:08.499Z",
     "updated_by": "web"
   },
   "lists": [
@@ -19,6 +19,13 @@
       "color": "#059669",
       "visible": true,
       "order": 1
+    },
+    {
+      "id": "l-p0q71r",
+      "name": "작업대시보드 고도화",
+      "color": "#d97706",
+      "visible": true,
+      "order": 2
     }
   ],
   "tasks": [
