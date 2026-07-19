@@ -2,7 +2,7 @@
   "schema_version": 1,
   "meta": {
     "title": "작업 대시보드",
-    "updated_at": "2026-07-19T10:46:41.792Z",
+    "updated_at": "2026-07-19T10:49:36.841Z",
     "updated_by": "web"
   },
   "lists": [
@@ -157,10 +157,10 @@
     {
       "id": "t-20260719-006",
       "title": "대시보드 자동화 검토하기",
-      "status": "todo",
+      "status": "done",
       "list_id": "l-ops",
       "priority": "low",
-      "progress": 0,
+      "progress": 100,
       "due": null,
       "waiting_for": null,
       "tags": [
@@ -174,7 +174,7 @@
       },
       "created_at": "2026-07-19",
       "updated_at": "2026-07-19",
-      "completed_at": null,
+      "completed_at": "2026-07-19",
       "order": 1
     },
     {
