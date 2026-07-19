@@ -1,67 +1,524 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>작업 대시보드</title>
-  <style>
-    :root { color-scheme: light; --ink:#18212f; --muted:#637083; --line:#e5e9f0; --bg:#f6f8fb; --card:#fff; --blue:#2563eb; --amber:#d97706; }
-    * { box-sizing:border-box; }
-    body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; }
-    main { max-width:1120px; margin:auto; padding:44px 22px 64px; }
-    header { display:flex; justify-content:space-between; gap:20px; align-items:end; margin-bottom:28px; }
-    h1 { margin:0; font-size:30px; letter-spacing:-.04em; }
-    header p { margin:6px 0 0; color:var(--muted); }
-    a { color:var(--blue); text-decoration:none; font-weight:650; }
-    #board { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
-    section { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; box-shadow:0 4px 14px #18212f08; }
-    section.wide { grid-column:1 / -1; }
-    h2 { font-size:16px; margin:0 0 13px; }
-    ul { padding:0; margin:0; list-style:none; }
-    li { border-top:1px solid var(--line); padding:11px 0; }
-    li:first-child { border-top:0; padding-top:0; }
-    .done { color:var(--muted); text-decoration:line-through; }
-    table { width:100%; border-collapse:collapse; font-size:14px; }
-    th,td { padding:10px 8px; text-align:left; border-top:1px solid var(--line); vertical-align:top; }
-    th { color:var(--muted); font-weight:650; }
-    .empty { color:var(--muted); }
-    .notice { color:var(--amber); }
-    @media (max-width:600px) { main { padding:28px 14px; } header { display:block; } header a { display:inline-block; margin-top:14px; } }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>작업 대시보드</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink:#18212f; --muted:#637083; --line:#e5e9f0; --bg:#f6f8fb; --card:#fff;
+    --blue:#2563eb; --red:#dc2626; --red-bg:#fee2e2; --green:#059669; --green-bg:#d1fae5;
+    --amber:#b45309; --amber-bg:#fef3c7; --gray-bg:#f1f5f9;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  main { max-width:1280px; margin:auto; padding:28px 20px 56px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
+  h1 { margin:0; font-size:24px; letter-spacing:-.03em; }
+  header p { margin:4px 0 0; color:var(--muted); font-size:13px; }
+  button { font:inherit; cursor:pointer; }
+  .btn { border:1px solid var(--line); background:var(--card); border-radius:8px; padding:7px 13px; font-weight:600; }
+  .btn:hover { background:var(--gray-bg); }
+  .btn-primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+  .btn-primary:hover { background:#1d4ed8; }
+  .btn-primary:disabled { opacity:.5; cursor:default; }
+  .btn-danger { color:var(--red); border-color:#fca5a5; }
+
+  /* 레이아웃: 칸반 3열 + 사이드바 */
+  #layout { display:grid; grid-template-columns:1fr 1fr 1fr 280px; gap:14px; align-items:start; }
+  @media (max-width:980px) { #layout { grid-template-columns:1fr 1fr; } aside { grid-column:1 / -1; } }
+  @media (max-width:640px) { #layout { grid-template-columns:1fr; } }
+
+  .col { background:#eef1f6; border:1px solid var(--line); border-radius:12px; padding:12px; }
+  .col-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .col-head h2 { font-size:14px; margin:0; }
+  .col-head .count { color:var(--muted); font-weight:400; }
+  .add-btn { border:0; background:none; color:var(--muted); font-size:18px; line-height:1; padding:2px 6px; border-radius:6px; }
+  .add-btn:hover { background:#fff; color:var(--blue); }
+  .cards { min-height:60px; display:flex; flex-direction:column; gap:8px; }
+  .cards.dragover { outline:2px dashed var(--blue); outline-offset:2px; border-radius:8px; }
+
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:11px 12px; cursor:grab; box-shadow:0 1px 3px #18212f0a; }
+  .card:hover { border-color:#c7d2e0; }
+  .card.dragging { opacity:.4; }
+  .card h3 { margin:0 0 6px; font-size:13.5px; font-weight:650; }
+  .card .list-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:1px; }
+  .bar { height:5px; background:var(--gray-bg); border-radius:3px; margin:7px 0; overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--blue); border-radius:3px; }
+  .chips { display:flex; gap:5px; flex-wrap:wrap; }
+  .chip { font-size:11px; font-weight:650; padding:2px 8px; border-radius:6px; }
+  .chip-high { color:var(--red); background:var(--red-bg); }
+  .chip-track { color:var(--green); background:var(--green-bg); }
+  .chip-wait { color:var(--amber); background:var(--amber-bg); }
+  .chip-low { color:var(--muted); background:var(--gray-bg); }
+  .chip-due { color:var(--muted); background:var(--gray-bg); font-weight:500; }
+  .chip-ai { color:#7c3aed; background:#ede9fe; }
+
+  aside { display:flex; flex-direction:column; gap:14px; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .panel h2 { font-size:14px; margin:0 0 10px; }
+  .panel ul { list-style:none; margin:0; padding:0; }
+  .panel li { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 0; border-top:1px solid var(--line); font-size:13px; }
+  .panel li:first-child { border-top:0; }
+  .panel .name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .panel .empty { color:var(--muted); border:0; }
+  /* 토글 스위치 */
+  .toggle { position:relative; width:34px; height:20px; flex:none; }
+  .toggle input { position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+  .toggle i { display:block; width:100%; height:100%; background:#cbd5e1; border-radius:10px; transition:.15s; }
+  .toggle i::after { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; background:#fff; border-radius:50%; transition:.15s; }
+  .toggle input:checked + i { background:var(--blue); }
+  .toggle input:checked + i::after { left:16px; }
+
+  /* 모달 */
+  dialog { border:0; border-radius:14px; padding:0; width:min(480px, 92vw); box-shadow:0 20px 60px #18212f33; }
+  dialog::backdrop { background:#18212f55; }
+  dialog form { padding:20px; }
+  dialog h2 { margin:0 0 14px; font-size:16px; }
+  .field { margin-bottom:12px; }
+  .field label { display:block; font-size:12px; font-weight:650; color:var(--muted); margin-bottom:4px; }
+  .field input[type=text], .field input[type=date], .field select, .field textarea {
+    width:100%; font:inherit; border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:#fff; color:var(--ink);
+  }
+  .field textarea { resize:vertical; min-height:56px; }
+  .field-row { display:flex; gap:10px; }
+  .field-row .field { flex:1; }
+  .check { display:flex; align-items:center; gap:7px; font-size:13px; }
+  .modal-actions { display:flex; justify-content:space-between; gap:8px; margin-top:16px; }
+  .modal-actions .right { display:flex; gap:8px; }
+
+  /* 상태 표시줄 */
+  #statusbar { position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:center; pointer-events:none; }
+  #statusbar .inner { pointer-events:auto; display:flex; gap:10px; align-items:center; background:var(--ink); color:#fff; border-radius:12px 12px 0 0; padding:10px 18px; font-size:13px; box-shadow:0 -4px 20px #18212f33; }
+  #statusbar.hidden { display:none; }
+  #status-msg a { color:#93c5fd; }
+</style>
 </head>
 <body>
-  <main>
-    <header>
-      <div><h1>작업 대시보드</h1><p>할 일 · 결정 사항 · 미해결 질문</p></div>
-      <a href="TASKS.md">원본 TASKS.md 열기</a>
-    </header>
-    <div id="board"><p class="empty">대시보드를 불러오는 중입니다…</p></div>
-  </main>
-  <script>
-    const board = document.querySelector('#board');
-    const escapeHtml = value => value.replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
-    const taskHtml = line => {
-      const done = line.startsWith('- [x]');
-      const text = line.replace(/^- \[[ x]\] /, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/~~(.*?)~~/g, '$1');
-      return `<li class="${done ? 'done' : ''}">${done ? '✓' : '○'} ${text}</li>`;
-    };
-    const tableHtml = lines => {
-      const rows = lines.filter(line => line.startsWith('|') && !line.includes('---')).map(line => line.split('|').slice(1,-1).map(cell => escapeHtml(cell.trim())));
-      if (!rows.length) return '<p class="empty">기록이 없습니다.</p>';
-      return `<table><thead><tr>${rows[0].map(cell => `<th>${cell}</th>`).join('')}</tr></thead><tbody>${rows.slice(1).map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-    };
-    fetch(`TASKS.md?updated=${Date.now()}`).then(response => response.ok ? response.text() : Promise.reject()).then(markdown => {
-      const sections = markdown.split(/^## /m).slice(1).map(block => {
-        const [title, ...body] = block.split('\n');
-        return { title: title.trim(), lines: body.filter(line => line.trim() && !line.startsWith('---')) };
-      });
-      board.innerHTML = sections.filter(section => !section.title.includes('빠른 사용법')).map(section => {
-        const isTable = section.lines.some(line => line.startsWith('|'));
-        const isWide = isTable ? 'wide' : '';
-        const content = isTable ? tableHtml(section.lines) : `<ul>${section.lines.filter(line => line.startsWith('- [')).map(taskHtml).join('') || '<li class="empty">항목이 없습니다.</li>'}</ul>`;
-        return `<section class="${isWide}"><h2>${escapeHtml(section.title)}</h2>${content}</section>`;
-      }).join('');
-    }).catch(() => { board.innerHTML = '<p class="notice">TASKS.md를 불러오지 못했습니다. 잠시 후 새로고침해 주세요.</p>'; });
-  </script>
+<main>
+  <header>
+    <div>
+      <h1>작업 대시보드</h1>
+      <p>To Do · In Progress · Done — <span id="meta-updated"></span></p>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn" id="btn-add-list">+ 리스트</button>
+      <button class="btn" id="btn-settings" title="GitHub 토큰 설정">⚙ 설정</button>
+    </div>
+  </header>
+
+  <div id="layout">
+    <!-- 칸반 3열: data-status 값이 tasks.json의 status와 일치 -->
+    <div class="col" data-status="todo">
+      <div class="col-head"><h2>To Do <span class="count"></span></h2><button class="add-btn" title="작업 추가">＋</button></div>
+      <div class="cards"></div>
+    </div>
+    <div class="col" data-status="in_progress">
+      <div class="col-head"><h2>In Progress <span class="count"></span></h2><button class="add-btn" title="작업 추가">＋</button></div>
+      <div class="cards"></div>
+    </div>
+    <div class="col" data-status="done">
+      <div class="col-head"><h2>Done <span class="count"></span></h2><button class="add-btn" title="작업 추가">＋</button></div>
+      <div class="cards"></div>
+    </div>
+
+    <aside>
+      <div class="panel">
+        <h2>Task Lists</h2>
+        <ul id="task-lists"></ul>
+      </div>
+      <div class="panel">
+        <h2>Actionable Lists <span style="font-weight:400;color:var(--muted);font-size:12px;">AI 실행 허용</span></h2>
+        <ul id="actionable-lists"></ul>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- 작업 편집 모달 -->
+<dialog id="task-modal">
+  <form method="dialog" id="task-form">
+    <h2 id="task-modal-title">작업 추가</h2>
+    <div class="field"><label>제목</label><input type="text" name="title" required autocomplete="off"></div>
+    <div class="field-row">
+      <div class="field"><label>상태</label>
+        <select name="status">
+          <option value="todo">To Do</option>
+          <option value="in_progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+      <div class="field"><label>리스트</label><select name="list_id"></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>우선순위</label>
+        <select name="priority">
+          <option value="high">High</option>
+          <option value="medium" selected>Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+      <div class="field"><label>기한</label><input type="date" name="due"></div>
+    </div>
+    <div class="field"><label>진행률 <span id="progress-val"></span>%</label><input type="range" name="progress" min="0" max="100" step="5" style="width:100%"></div>
+    <div class="field"><label>대기 사유 (있으면 Waiting 칩 표시)</label><input type="text" name="waiting_for" autocomplete="off" placeholder="예: 고객 회신 대기"></div>
+    <div class="field"><label>메모</label><textarea name="notes"></textarea></div>
+    <div class="field check"><input type="checkbox" name="ai_actionable" id="ai-actionable"><label for="ai-actionable" style="margin:0;font-size:13px;color:var(--ink);">AI가 처리할 수 있는 작업 (Actionable Lists에 표시)</label></div>
+    <div class="field" id="ai-instruction-field" hidden><label>AI 지시 내용</label><textarea name="ai_instruction" placeholder="AI에게 맡길 때 전달할 지시"></textarea></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-danger" id="btn-delete" hidden>삭제</button>
+      <div class="right">
+        <button type="button" class="btn" id="btn-cancel">취소</button>
+        <button type="submit" class="btn btn-primary">확인</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<!-- 설정 모달 -->
+<dialog id="settings-modal">
+  <form method="dialog" style="padding:20px;">
+    <h2>GitHub 저장 설정</h2>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 12px;">
+      변경 내용을 이 레포의 <code>tasks.json</code>에 커밋하려면 Personal Access Token이 필요합니다.<br>
+      <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Fine-grained 토큰 발급</a>
+      → Repository: <b>tasks-dashboard</b>만 선택 → Permissions: <b>Contents = Read and write</b>.<br>
+      토큰은 이 브라우저(localStorage)에만 저장됩니다.
+    </p>
+    <div class="field"><label>Personal Access Token</label><input type="text" name="token" autocomplete="off" placeholder="github_pat_..."></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-danger" id="btn-token-clear">토큰 삭제</button>
+      <div class="right">
+        <button type="button" class="btn" id="btn-settings-cancel">취소</button>
+        <button type="submit" class="btn btn-primary">저장</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<!-- 하단 저장 표시줄: 변경 사항이 있을 때만 표시 -->
+<div id="statusbar" class="hidden">
+  <div class="inner">
+    <span id="status-msg">저장되지 않은 변경 사항이 있습니다.</span>
+    <button class="btn btn-primary" id="btn-save">GitHub에 저장</button>
+    <button class="btn" id="btn-discard" style="background:none;color:#cbd5e1;border-color:#475569;">되돌리기</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ===== 설정 =====
+const OWNER = '2nomi1-hue', REPO = 'tasks-dashboard', FILE = 'tasks.json', BRANCH = 'main';
+const API = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`;
+const LS_TOKEN = 'td_token', LS_DRAFT = 'td_draft';
+
+// ===== 상태 =====
+let data = null;       // tasks.json 내용
+let sha = null;        // GitHub 파일 sha (커밋 시 필요)
+let dirty = false;     // 저장 안 된 변경 여부
+let editingId = null;  // 편집 중인 작업 id (null이면 새 작업)
+
+const $ = sel => document.querySelector(sel);
+const esc = v => String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const today = () => new Date().toISOString().slice(0, 10);
+const nowIso = () => new Date().toISOString();
+
+// UTF-8 안전 base64 인코딩/디코딩
+const b64encode = str => btoa(String.fromCharCode(...new TextEncoder().encode(str)));
+const b64decode = b64 => new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)));
+
+// ===== 데이터 로드 =====
+async function load() {
+  try {
+    const res = await fetch(`${API}?ref=${BRANCH}&t=${Date.now()}`, { headers: { Accept: 'application/vnd.github+json' } });
+    if (!res.ok) throw new Error(`tasks.json 로드 실패 (${res.status})`);
+    const json = await res.json();
+    sha = json.sha;
+    data = JSON.parse(b64decode(json.content.replace(/\n/g, '')));
+  } catch (err) {
+    // 로컬 미리보기 폴백: 같은 폴더의 tasks.json을 읽음 (sha가 없어 저장은 불가)
+    const local = await fetch(`tasks.json?t=${Date.now()}`).catch(() => null);
+    if (!local?.ok) throw err;
+    data = await local.json();
+    sha = null;
+  }
+
+  // 저장 전에 닫았던 임시 변경본이 있으면 복원 제안
+  const draft = localStorage.getItem(LS_DRAFT);
+  if (draft) {
+    try {
+      const parsed = JSON.parse(draft);
+      if (confirm('저장하지 않은 이전 변경 사항이 있습니다. 복원할까요?\n(취소하면 임시본을 버립니다)')) {
+        data = parsed;
+        markDirty();
+      } else localStorage.removeItem(LS_DRAFT);
+    } catch { localStorage.removeItem(LS_DRAFT); }
+  }
+  render();
+}
+
+// ===== 저장 (GitHub 커밋) =====
+async function save() {
+  const token = localStorage.getItem(LS_TOKEN);
+  if (!token) { $('#settings-modal').showModal(); return; }
+  const btn = $('#btn-save');
+  btn.disabled = true; btn.textContent = '저장 중…';
+  data.meta.updated_at = nowIso();
+  data.meta.updated_by = 'web';
+  try {
+    const res = await fetch(API, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
+      body: JSON.stringify({
+        message: `chore: update tasks via web (${today()})`,
+        content: b64encode(JSON.stringify(data, null, 2) + '\n'),
+        sha, branch: BRANCH,
+      }),
+    });
+    if (res.status === 409) { alert('다른 곳에서 먼저 수정되었습니다. 페이지를 새로고침해 최신 내용을 확인한 뒤 다시 수정해 주세요.'); return; }
+    if (res.status === 401 || res.status === 403) { alert('토큰이 유효하지 않거나 권한이 없습니다. 설정에서 토큰을 확인해 주세요.'); return; }
+    if (!res.ok) { alert(`저장 실패 (${res.status})`); return; }
+    sha = (await res.json()).content.sha;
+    dirty = false;
+    localStorage.removeItem(LS_DRAFT);
+    render();
+  } finally { btn.disabled = false; btn.textContent = 'GitHub에 저장'; }
+}
+
+function markDirty() {
+  dirty = true;
+  localStorage.setItem(LS_DRAFT, JSON.stringify(data)); // 새로고침 대비 임시 저장
+  render();
+}
+
+// ===== 렌더링 =====
+function chipHtml(t) {
+  const chips = [];
+  if (t.waiting_for) chips.push(`<span class="chip chip-wait" title="${esc(t.waiting_for)}">Waiting</span>`);
+  else if (t.priority === 'high') chips.push('<span class="chip chip-high">High Priority</span>');
+  else if (t.priority === 'low') chips.push('<span class="chip chip-low">Low</span>');
+  else if (t.status === 'in_progress') chips.push('<span class="chip chip-track">On Track</span>');
+  if (t.due && t.status !== 'done') chips.push(`<span class="chip chip-due">~${esc(t.due)}</span>`);
+  if (t.ai?.actionable) chips.push(`<span class="chip chip-ai">AI${t.ai.enabled ? ' ON' : ''}</span>`);
+  return chips.join('');
+}
+
+function render() {
+  const listById = Object.fromEntries(data.lists.map(l => [l.id, l]));
+  const visible = t => !t.list_id || (listById[t.list_id]?.visible ?? true);
+
+  // 칸반 3열
+  for (const col of document.querySelectorAll('.col')) {
+    const status = col.dataset.status;
+    const tasks = data.tasks.filter(t => t.status === status && visible(t)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    col.querySelector('.count').textContent = tasks.length ? `· ${tasks.length}` : '';
+    col.querySelector('.cards').innerHTML = tasks.map(t => {
+      const list = listById[t.list_id];
+      return `<div class="card" draggable="true" data-id="${t.id}">
+        <h3>${list ? `<span class="list-dot" style="background:${esc(list.color)}"></span>` : ''}${esc(t.title)}</h3>
+        <div class="bar"><i style="width:${t.progress ?? 0}%"></i></div>
+        <div class="chips">${chipHtml(t)}</div>
+      </div>`;
+    }).join('') || '<p class="empty" style="color:var(--muted);font-size:12px;margin:4px 2px;">작업 없음</p>';
+  }
+
+  // Task Lists 패널 (프로젝트 그룹 토글 → 보드 필터)
+  $('#task-lists').innerHTML = data.lists.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map(l => `
+    <li><span class="list-dot" style="background:${esc(l.color)}"></span><span class="name">${esc(l.name)}</span>
+      <span class="toggle"><input type="checkbox" data-list="${l.id}" ${l.visible ? 'checked' : ''}><i></i></span>
+    </li>`).join('') || '<li class="empty">리스트 없음</li>';
+
+  // Actionable Lists 패널 (AI 처리 가능 작업 + 실행 허용 토글)
+  const actionable = data.tasks.filter(t => t.ai?.actionable && t.status !== 'done');
+  $('#actionable-lists').innerHTML = actionable.map(t => `
+    <li><span class="name" data-open="${t.id}" style="cursor:pointer;" title="${esc(t.ai.instruction || '')}">${esc(t.title)}</span>
+      <span class="toggle"><input type="checkbox" data-ai="${t.id}" ${t.ai.enabled ? 'checked' : ''}><i></i></span>
+    </li>`).join('') || '<li class="empty">AI 처리 가능 작업 없음</li>';
+
+  $('#meta-updated').textContent = `마지막 저장: ${data.meta.updated_at?.slice(0, 16).replace('T', ' ') ?? '-'}`;
+  $('#statusbar').classList.toggle('hidden', !dirty);
+}
+
+// ===== 작업 모달 =====
+function openTaskModal(task, defaults = {}) {
+  editingId = task?.id ?? null;
+  const f = $('#task-form');
+  $('#task-modal-title').textContent = task ? '작업 편집' : '작업 추가';
+  $('#btn-delete').hidden = !task;
+  f.list_id.innerHTML = '<option value="">(없음)</option>' + data.lists.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
+  const v = { status: 'todo', priority: 'medium', progress: 0, ...defaults, ...(task ?? {}) };
+  f.title.value = v.title ?? '';
+  f.status.value = v.status;
+  f.list_id.value = v.list_id ?? '';
+  f.priority.value = v.priority;
+  f.due.value = v.due ?? '';
+  f.progress.value = v.progress ?? 0;
+  f.waiting_for.value = v.waiting_for ?? '';
+  f.notes.value = v.notes ?? '';
+  f.ai_actionable.checked = !!v.ai?.actionable;
+  f.ai_instruction.value = v.ai?.instruction ?? '';
+  $('#ai-instruction-field').hidden = !f.ai_actionable.checked;
+  $('#progress-val').textContent = f.progress.value;
+  $('#task-modal').showModal();
+}
+
+function submitTask() {
+  const f = $('#task-form');
+  const patch = {
+    title: f.title.value.trim(),
+    status: f.status.value,
+    list_id: f.list_id.value || null,
+    priority: f.priority.value,
+    progress: Number(f.progress.value),
+    due: f.due.value || null,
+    waiting_for: f.waiting_for.value.trim() || null,
+    notes: f.notes.value.trim(),
+    updated_at: today(),
+  };
+  if (!patch.title) return;
+  const ai = { actionable: f.ai_actionable.checked, instruction: f.ai_instruction.value.trim() };
+
+  if (editingId) {
+    const t = data.tasks.find(t => t.id === editingId);
+    const wasDone = t.status === 'done';
+    Object.assign(t, patch);
+    t.ai = { ...t.ai, ...ai };
+    if (!wasDone && t.status === 'done') { t.completed_at = today(); t.progress = 100; }
+    if (wasDone && t.status !== 'done') t.completed_at = null;
+  } else {
+    const seq = String(data.tasks.length + 1).padStart(3, '0');
+    data.tasks.push({
+      id: `t-${today().replace(/-/g, '')}-${seq}-${Math.random().toString(36).slice(2, 6)}`,
+      ...patch,
+      tags: [],
+      ai: { ...ai, enabled: false },
+      created_at: today(),
+      completed_at: patch.status === 'done' ? today() : null,
+      order: data.tasks.filter(t => t.status === patch.status).length,
+    });
+  }
+  markDirty();
+}
+
+// ===== 드래그 앤 드롭 =====
+let dragId = null;
+document.addEventListener('dragstart', e => {
+  const card = e.target.closest?.('.card');
+  if (!card) return;
+  dragId = card.dataset.id;
+  card.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+});
+document.addEventListener('dragend', e => {
+  e.target.closest?.('.card')?.classList.remove('dragging');
+  document.querySelectorAll('.cards.dragover').forEach(el => el.classList.remove('dragover'));
+});
+document.addEventListener('dragover', e => {
+  const zone = e.target.closest?.('.col');
+  if (!zone || !dragId) return;
+  e.preventDefault();
+  document.querySelectorAll('.cards.dragover').forEach(el => el.classList.remove('dragover'));
+  zone.querySelector('.cards').classList.add('dragover');
+});
+document.addEventListener('drop', e => {
+  const zone = e.target.closest?.('.col');
+  if (!zone || !dragId) return;
+  e.preventDefault();
+  const t = data.tasks.find(t => t.id === dragId);
+  const newStatus = zone.dataset.status;
+  // 드롭 위치의 카드 앞에 삽입, 빈 곳이면 맨 뒤
+  const targetCard = e.target.closest('.card');
+  const colTasks = data.tasks.filter(x => x.status === newStatus && x.id !== t.id).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  let idx = colTasks.length;
+  if (targetCard && targetCard.dataset.id !== t.id) idx = colTasks.findIndex(x => x.id === targetCard.dataset.id);
+  colTasks.splice(idx < 0 ? colTasks.length : idx, 0, t);
+  colTasks.forEach((x, i) => x.order = i);
+  if (t.status !== newStatus) {
+    t.status = newStatus;
+    t.updated_at = today();
+    if (newStatus === 'done') { t.completed_at = today(); t.progress = 100; }
+    else t.completed_at = null;
+  }
+  dragId = null;
+  markDirty();
+});
+
+// ===== 이벤트 바인딩 =====
+document.addEventListener('click', e => {
+  const card = e.target.closest('.card');
+  if (card) { openTaskModal(data.tasks.find(t => t.id === card.dataset.id)); return; }
+  const addBtn = e.target.closest('.add-btn');
+  if (addBtn) { openTaskModal(null, { status: addBtn.closest('.col').dataset.status }); return; }
+  const openName = e.target.closest('[data-open]');
+  if (openName) openTaskModal(data.tasks.find(t => t.id === openName.dataset.open));
+});
+
+document.addEventListener('change', e => {
+  if (e.target.dataset.list) { // Task Lists 토글 → 보드 필터
+    data.lists.find(l => l.id === e.target.dataset.list).visible = e.target.checked;
+    markDirty();
+  }
+  if (e.target.dataset.ai) { // Actionable 토글 → AI 실행 허용
+    const t = data.tasks.find(t => t.id === e.target.dataset.ai);
+    t.ai.enabled = e.target.checked;
+    t.updated_at = today();
+    markDirty();
+  }
+});
+
+$('#task-form').addEventListener('submit', submitTask);
+$('#btn-cancel').addEventListener('click', () => $('#task-modal').close());
+$('#btn-delete').addEventListener('click', () => {
+  if (!confirm('이 작업을 삭제할까요?')) return;
+  data.tasks = data.tasks.filter(t => t.id !== editingId);
+  $('#task-modal').close();
+  markDirty();
+});
+$('#task-form').progress.addEventListener('input', e => $('#progress-val').textContent = e.target.value);
+$('#ai-actionable').addEventListener('change', e => $('#ai-instruction-field').hidden = !e.target.checked);
+
+$('#btn-add-list').addEventListener('click', () => {
+  const name = prompt('새 리스트 이름:');
+  if (!name?.trim()) return;
+  const colors = ['#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed', '#0891b2'];
+  data.lists.push({
+    id: `l-${Math.random().toString(36).slice(2, 8)}`,
+    name: name.trim(),
+    color: colors[data.lists.length % colors.length],
+    visible: true,
+    order: data.lists.length,
+  });
+  markDirty();
+});
+
+$('#btn-settings').addEventListener('click', () => {
+  $('#settings-modal').querySelector('input[name=token]').value = localStorage.getItem(LS_TOKEN) ?? '';
+  $('#settings-modal').showModal();
+});
+$('#settings-modal form').addEventListener('submit', () => {
+  const v = $('#settings-modal').querySelector('input[name=token]').value.trim();
+  if (v) localStorage.setItem(LS_TOKEN, v);
+});
+$('#btn-settings-cancel').addEventListener('click', () => $('#settings-modal').close());
+$('#btn-token-clear').addEventListener('click', () => {
+  localStorage.removeItem(LS_TOKEN);
+  $('#settings-modal').querySelector('input[name=token]').value = '';
+});
+
+$('#btn-save').addEventListener('click', save);
+$('#btn-discard').addEventListener('click', () => {
+  if (!confirm('저장하지 않은 변경 사항을 모두 버리고 마지막 저장 상태로 되돌릴까요?')) return;
+  localStorage.removeItem(LS_DRAFT);
+  dirty = false;
+  load().catch(err => alert(err.message));
+});
+
+window.addEventListener('beforeunload', e => { if (dirty) e.preventDefault(); });
+
+load().catch(err => {
+  document.querySelector('main').insertAdjacentHTML('beforeend', `<p style="color:var(--red)">${esc(err.message)}</p>`);
+});
+</script>
 </body>
 </html>
