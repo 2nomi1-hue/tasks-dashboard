@@ -2,12 +2,24 @@
   "schema_version": 1,
   "meta": {
     "title": "작업 대시보드",
-    "updated_at": "2026-07-19T12:00:00+09:00",
-    "updated_by": "claude"
+    "updated_at": "2026-07-19T10:41:14.010Z",
+    "updated_by": "web"
   },
   "lists": [
-    { "id": "l-biz", "name": "비즈니스 검증", "color": "#2563eb", "visible": true, "order": 0 },
-    { "id": "l-ops", "name": "대시보드 운영", "color": "#059669", "visible": true, "order": 1 }
+    {
+      "id": "l-biz",
+      "name": "비즈니스 검증",
+      "color": "#2563eb",
+      "visible": true,
+      "order": 0
+    },
+    {
+      "id": "l-ops",
+      "name": "대시보드 운영",
+      "color": "#059669",
+      "visible": true,
+      "order": 1
+    }
   ],
   "tasks": [
     {
@@ -19,13 +31,19 @@
       "progress": 0,
       "due": "2026-07-20",
       "waiting_for": null,
-      "tags": ["focus"],
+      "tags": [
+        "focus"
+      ],
       "notes": "예: 유료 고객 인터뷰 3건 완료",
-      "ai": { "actionable": false, "enabled": false, "instruction": "" },
+      "ai": {
+        "actionable": false,
+        "enabled": false,
+        "instruction": ""
+      },
       "created_at": "2026-07-19",
       "updated_at": "2026-07-19",
       "completed_at": null,
-      "order": 0
+      "order": 2
     },
     {
       "id": "t-20260719-002",
@@ -36,13 +54,19 @@
       "progress": 0,
       "due": "2026-07-21",
       "waiting_for": null,
-      "tags": ["focus"],
+      "tags": [
+        "focus"
+      ],
       "notes": "오늘의 다음 행동 1개",
-      "ai": { "actionable": true, "enabled": false, "instruction": "인터뷰 요청 메시지 초안을 3가지 톤으로 작성" },
+      "ai": {
+        "actionable": true,
+        "enabled": false,
+        "instruction": "인터뷰 요청 메시지 초안을 3가지 톤으로 작성"
+      },
       "created_at": "2026-07-19",
       "updated_at": "2026-07-19",
       "completed_at": null,
-      "order": 1
+      "order": 0
     },
     {
       "id": "t-20260719-003",
@@ -55,7 +79,11 @@
       "waiting_for": null,
       "tags": [],
       "notes": "타깃 고객, 문제, 지불 의사를 짧게 정리. 다음 검토: 2026-07-22",
-      "ai": { "actionable": true, "enabled": false, "instruction": "타깃 고객/문제/지불 의사 정리 템플릿 초안 작성" },
+      "ai": {
+        "actionable": true,
+        "enabled": false,
+        "instruction": "타깃 고객/문제/지불 의사 정리 템플릿 초안 작성"
+      },
       "created_at": "2026-07-19",
       "updated_at": "2026-07-19",
       "completed_at": null,
@@ -70,9 +98,15 @@
       "progress": 20,
       "due": null,
       "waiting_for": null,
-      "tags": ["habit"],
+      "tags": [
+        "habit"
+      ],
       "notes": "매일 시작 전 5분, 마감 전 5분 업데이트",
-      "ai": { "actionable": false, "enabled": false, "instruction": "" },
+      "ai": {
+        "actionable": false,
+        "enabled": false,
+        "instruction": ""
+      },
       "created_at": "2026-07-19",
       "updated_at": "2026-07-19",
       "completed_at": null,
@@ -89,7 +123,11 @@
       "waiting_for": "인터뷰 요청 발송 후 회신 (대기 시작: 2026-07-19)",
       "tags": [],
       "notes": "",
-      "ai": { "actionable": false, "enabled": false, "instruction": "" },
+      "ai": {
+        "actionable": false,
+        "enabled": false,
+        "instruction": ""
+      },
       "created_at": "2026-07-19",
       "updated_at": "2026-07-19",
       "completed_at": null,
@@ -104,18 +142,24 @@
       "progress": 0,
       "due": null,
       "waiting_for": null,
-      "tags": ["someday"],
+      "tags": [
+        "someday"
+      ],
       "notes": "작업량이 늘어나면 도구 연동을 다시 검토",
-      "ai": { "actionable": false, "enabled": false, "instruction": "" },
+      "ai": {
+        "actionable": false,
+        "enabled": false,
+        "instruction": ""
+      },
       "created_at": "2026-07-19",
       "updated_at": "2026-07-19",
       "completed_at": null,
-      "order": 2
+      "order": 1
     },
     {
       "id": "t-20260719-007",
       "title": "TASKS.md 기반 대시보드 초안 만들기",
-      "status": "done",
+      "status": "in_progress",
       "list_id": "l-ops",
       "priority": "medium",
       "progress": 100,
@@ -123,11 +167,15 @@
       "waiting_for": null,
       "tags": [],
       "notes": "",
-      "ai": { "actionable": false, "enabled": false, "instruction": "" },
+      "ai": {
+        "actionable": false,
+        "enabled": false,
+        "instruction": ""
+      },
       "created_at": "2026-07-19",
       "updated_at": "2026-07-19",
-      "completed_at": "2026-07-19",
-      "order": 0
+      "completed_at": null,
+      "order": 3
     }
   ]
 }
